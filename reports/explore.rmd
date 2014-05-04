@@ -1,0 +1,87 @@
+```{r}
+library(ProjectTemplate); load.project()
+```
+
+# Basic exploration
+```{r}
+str(rdyads)
+names(rdyads)
+rdyads$X
+
+head(rdyads)
+# General description of dataset
+Hmisc::describe(rdyads[,4:ncol(rdyads)])
+
+# * Four leagues in England, France, Germany and Spain
+# * Skim colour is skewed with on around 16% in the 4 or 5 zone; There's a question about how to code this core predictor
+# * 11 different detailed positions and 4 general positions
+
+hist(rdyads$PlayerHeightCM)
+# * Height is normally distributed
+
+
+# check the one club/league/skincol/etc per player assumption (it's true)
+for (i in names(rdyads)) {
+    print(i)
+    print(table(aggregate(rdyads[, i], list(rdyads$PlayerID), function(X) length(unique(X)))[,2]))
+}
+
+
+# check ref features
+for (i in names(rdyads)) {
+    print(i)
+    print(table(aggregate(rdyads[, i], list(rdyads$RefereeID), function(X) length(unique(X)))[,2]))
+}
+
+
+# number of matches  per combination
+hist(rdyads$Matches)
+table(rdyads$Matches)
+x <- data.frame(table(rdyads$Matches))
+x$Var1 <- as.numeric(x$Var1)
+x$combined <- x$Var1 * x$Freq
+x$FreqProp <- x$Freq / sum(x$Freq)
+x$combinedProp <- x$combined / sum(x$combined)
+round(x, 3)
+
+# * distribution of matches is very skewed
+# * Although it is less so the case at the match level; e.g., while the interaction rows are based on a single match, matches in general are involve player and refs who will eventually meet 2 or more times 82% of the time.
+
+# check assumptions about YellowRed
+table(YellowRed=rdyads$YellowRed, RedCards=rdyads$RedCards)
+table(YellowRed=rdyads$YellowRed, YellowCards=rdyads$YellowCards)
+# Clearly a Yellow-Red does not meet the requirements for a Yellow card, and does not meet the requirements of a Red card
+
+
+```
+
+
+
+
+```{r}
+# number of player IDs
+length(unique(rdyads$PlayerID))
+
+# number of dyads per player
+length(unique(rdyads$RefereeID))
+```
+
+There are a little over two thousand refs and two thousand players.
+
+
+```{r}
+# a quick look at the core research question
+summary(lm(RedCardsProp ~ SkinCol, rdyads))
+summary(lm(RedCardsProp ~ SkinCol, rdyads, weights=Matches))
+summary(lm(YellowCardsProp ~ SkinCol, rdyads))
+summary(lm(YellowRedProp ~ SkinCol, rdyads))
+
+plot(aggregate(rdyads$RedCardsProp, list(rdyads$SkinCol), mean, na.rm=TRUE))
+plot(aggregate(rdyads$YellowCardsProp, list(rdyads$SkinCol), mean, na.rm=TRUE))
+plot(aggregate(rdyads$YellowRedProp, list(rdyads$SkinCol), mean, na.rm=TRUE))
+
+
+aggregate(rplayers$RedCardsSumProp, list(rplayers$SkinCol), mean, na.rm=TRUE)
+aggregate(rplayers$YellowCardsSumProp, list(rplayers$SkinCol), mean, na.rm=TRUE)
+summary(lm(RedCardsSumProp ~ SkinCol, rplayers))
+```
