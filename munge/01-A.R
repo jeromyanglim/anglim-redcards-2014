@@ -5,11 +5,28 @@ v$player_variables <- c("PlayerID", "Player", "Club", "League_Country", "LeagueI
                         "BirthM", "BirthY", "PositionID", "Position", "Position_Detailed")
 v$ref_variables <- c("RefereeID", "RefCountryID", "RCperRef", "TotMatPerRef", "meanIAT_RefCountry", 
 "nIAT", "seIAT", "meanExp_RefCountry", "nExp", "seExp")
+v$iat_measures <- c("meanIAT_RefCountry",  "nIAT", "seIAT", "meanExp_RefCountry", "nExp", "seExp")
 
 
-# create player and referee data frames
+
+# Fix variable codings
+v$make_numeric <- c("BirthD", "meanIAT_RefCountry",  "nIAT", "seIAT", "meanExp_RefCountry", "nExp", "seExp")
+for (variable in v$make_numeric) {
+    rdyads[,variable] <- as.numeric(rdyads[,variable])
+}
+
+rdyads[rdyads$Position == "", 'Position'] <- NA
+
+# Player and dyad variables
+rdyads$SkinCol_4or5 <- as.numeric(rdyads$SkinCol == 4 | rdyads$SkinCol == 5) # binary coding
+rdyads$SkinCol_0to1 <- (rdyads$SkinCol -1) / 4 # continuous and rescaled
+
+
+# create player, referee, and referee country data frames
 rplayers <-  rdyads[!duplicated(rdyads$PlayerID), v$player_variables]
 rrefs <- rdyads[!duplicated(rdyads$RefereeID), v$ref_variables]
+rcountries <- rrefs[!duplicated(rrefs$RefCountryID), c('RefCountryID', v$iat_measures)]
+
 
 # merge in totals to player
 merge_sum <- function(variable='RedCards', id='PlayerID', data=rplayers, dyads=rdyads) {
@@ -22,11 +39,8 @@ merge_sum <- function(variable='RedCards', id='PlayerID', data=rplayers, dyads=r
 for (variable in c("Matches", "Goals", "YellowCards", "YellowRed", "RedCards")) {
     rplayers <- merge_sum(variable, 'PlayerID', rplayers, rdyads)
     rrefs <- merge_sum(variable, 'RefereeID', rrefs, rdyads)
+    rcountries <- merge_sum(variable, 'RefCountryID', rcountries, rdyads)
 }
-
-
-
-# merge in totals to ref
 
 
 # create proportion variables
@@ -41,5 +55,32 @@ for (variable in c('Goals', 'YellowCards', 'YellowRed', 'RedCards')) {
     variable_sum <- paste0(variable, 'Sum')
     rplayers <- create_prop(rplayers, variable_sum, 'MatchesSum')
     rrefs <- create_prop(rrefs, variable_sum, 'MatchesSum')
+    rcountries <- create_prop(rcountries, variable_sum, 'MatchesSum')
 }
+
+# create modified predictors
+rplayers$MatchesSum_log <- log(rplayers$MatchesSum)
+rrefs$MatchesSum_log <- log(rrefs$MatchesSum)
+
+
+
+
+
+
+
+
+
+
+
+
+# creeate interaction variables
+make_interaction <- function(x1, x2, data=rdyads, separator="BY") {
+    interaction_variable_name <- paste0(x1, separator, x2)
+    data[ , interaction_variable_name] <- data[,x1] * data[,x2]
+    data
+}
+
+rdyads <- make_interaction('SkinCol', 'meanIAT_RefCountry')
+
+
 

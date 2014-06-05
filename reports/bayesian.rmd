@@ -1,0 +1,38 @@
+```{r}
+library(ProjectTemplate); load.project()
+```
+
+```{r}
+set_analysis <- function(analysis='standard') {
+    if (analysis == "quick")
+         settings <- list(n.chains= 4,  n.adapt= 100, burnin = 50, n.iter= 100, thin=1)
+    if (analysis == "quick_standard")
+        settings <- list(n.chains= 2,  n.adapt= 200, burnin = 500, n.iter= 1000, thin=1)
+    if (analysis == "standard")
+        settings <- list(n.chains= 4,  n.adapt= 200, burnin = 1000, n.iter= 2000, thin=1)
+    if (analysis == "publication")
+        settings <- list(n.chains= 4,  n.adapt= 1000, burnin = 2000, n.iter= 25000, thin=1)
+
+    settings
+}
+
+settings <- set_analysis("quick_standard")
+source('lib/specific-models.r')
+```
+
+# Initial Models
+
+```{r}
+source('lib/specific-models.r')
+# debugonce(get_data1)
+temp_rdyads <- rdyads[rdyads$Matches > 14, ]
+jags_data <- get_data1(dyad_data=temp_rdyads, x_var=c('SkinCol', 'PlayerHeightCM'), z_var="meanIAT_RefCountry", w_var="SkinColBYmeanIAT_RefCountry")
+head(rplayers)
+line_num_cat(m1())
+mod1 <- run_jags(m1(), jags_data$jags, c('beta', 'sigma_beta1', 'sigma_beta2', 'sigma_beta3', 'gamma_beta1', 'gamma_beta2', 'gamma_beta3'))
+summary(mod1$samples)
+
+logit2p(-4.9 +  (1 * -0.85))
+logit2p(-4.9 - .5)
+```
+
