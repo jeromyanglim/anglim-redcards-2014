@@ -22,6 +22,7 @@ mod1 <- run_jags(m1(), jags_data$jags, c('beta', 'sigma_beta1', 'sigma_beta2', '
 mod2 <- run_jags(m2(), jags_data$jags, c('beta', 'sigma_beta1', 'sigma_beta2', 'gamma_beta1', 'gamma_beta2', 
                                          'gamma_beta3'))
 
+line_num_cat(m2())
 
 sink("output3.txt")
 summary(mod1$samples)
