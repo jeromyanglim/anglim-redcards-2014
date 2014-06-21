@@ -1,8 +1,22 @@
+set_analysis <- function(analysis='standard') {
+    if (analysis == "quick")
+        settings <- list(n.chains= 4,  n.adapt= 100, burnin = 50, n.iter= 100, thin=1)
+    if (analysis == "quick_standard")
+        settings <- list(n.chains= 2,  n.adapt= 200, burnin = 500, n.iter= 1000, thin=1)
+    if (analysis == "standard")
+        settings <- list(n.chains= 4,  n.adapt= 200, burnin = 1000, n.iter= 2000, thin=1)
+    if (analysis == "publication")
+        settings <- list(n.chains= 4,  n.adapt= 1000, burnin = 2000, n.iter= 25000, thin=1)
+    
+    settings
+}
+
+
 run_jags <- function(script, data, variable.names, dic.run=FALSE,
                      n.chains=settings$n.chains, n.adapt=settings$n.adapt, burnin=settings$burnin, 
                      n.iter=settings$n.iter, thin=settings$thin, dic.type='pD') {  
     # if script is file name, then import as file name
-    if(file.exists(script))  script <-  paste( readLines(script, warn=FALSE) , collapse="\n")
+    if(file.exists(script))  script <-  paste( readLines(script, warn=FALSE) , collapse="\n") 
     cat('jags.model: \n')
     mod <- jags.model(textConnection(script), data=data,  n.chains=n.chains, n.adapt=n.adapt)
     cat('update: \n')

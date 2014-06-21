@@ -1,0 +1,231 @@
+```{r}
+library(ProjectTemplate); load.project()
+```
+
+# Basic exploration
+```{r}
+str(cdyads)
+names(cdyads)
+
+head(cdyads)
+# General description of dataset
+Hmisc::describe(cdyads[,3:ncol(cdyads)])
+
+plot(table(cdyads$leagueCountry))
+# * Four leagues in England, France, Germany and Spain
+plot(table(cdyads$skincol))
+# * Skin colour is skewed with around 16% in the 4 or 5 zone; There's a question about how to code this core predictor
+
+round(cbind(prop.table(sort(table(cdyads$position)))), 2)
+# * 12 different positions 
+
+hist(cdyads$height)
+# * Height is normally distributed
+
+
+# check the one club/league/skincol/etc per player assumption (it's true)
+for (i in names(cdyads)) {
+    print(i)
+    print(table(aggregate(cdyads[, i], list(cdyads$playerShort), function(X) length(unique(X)))[,2]))
+}
+
+
+# check ref features (refs referee in multiple leagues)
+for (i in names(cdyads)) {
+    print(i)
+    print(table(aggregate(cdyads[, i], list(cdyads$refNum), function(X) length(unique(X)))[,2]))
+}
+
+
+# number of games  per combination
+hist(cdyads$games)
+table(cdyads$games)
+x <- data.frame(table(cdyads$games))
+x$Var1 <- as.numeric(x$Var1)
+x$combined <- x$Var1 * x$Freq
+x$FreqProp <- x$Freq / sum(x$Freq)
+x$combinedProp <- x$combined / sum(x$combined)
+round(x, 3)
+
+# * distribution of games is very skewed
+# * Although it is less so the case at the match level; e.g., while the interaction rows are based on a single match, games in general are involve player and refs who will eventually meet 2 or more times 82% of the time.
+
+# What is a YellowRed?
+table(YellowRed=cdyads$yellowReds, redCards=cdyads$redCards)
+table(YellowRed=cdyads$yellowReds, yellowCards=cdyads$yellowCards)
+# I assume it is a second yellow card that results in being asked to leave the ground
+# However, this only make sense if a yellow-red does not count as a yellow or a red.
+```
+
+
+
+
+```{r}
+# number of player IDs
+length(unique(cdyads$playerShort))
+
+# number of dyads per player
+length(unique(cdyads$refNum))
+```
+
+There are a little over two thousand refs and two thousand players.
+
+
+```{r}
+# a quick look at the core research question
+head(cdyads)
+summary(lm(redCardsProp ~ skincol, cdyads))
+summary(lm(redCardsProp ~ skincol, cdyads, weights=games))
+summary(lm(yellowCardsProp ~ skincol, cdyads))
+summary(lm(yellowRedsProp ~ skincol, cdyads))
+
+plot(aggregate(cdyads$redCardsProp, list(cdyads$skincol), mean, na.rm=TRUE))
+plot(aggregate(cdyads$yellowCardsProp, list(cdyads$skincol), mean, na.rm=TRUE))
+plot(aggregate(cdyads$YellowRedProp, list(cdyads$skincol), mean, na.rm=TRUE))
+
+
+aggregate(cplayers$redCardsSumProp, list(cplayers$skincol), mean, na.rm=TRUE)
+aggregate(cplayers$yellowCardsSumProp, list(cplayers$skincol), mean, na.rm=TRUE)
+summary(lm(redCardsSumProp ~ skincol, cplayers))
+
+summary(lm(redCardsSumProp ~ factor(skincol), cplayers[cplayers$gamesSum > 100, ]))
+
+```
+
+# Examination of the players dataset
+```{r}
+# general distribution of redCard proportions
+plot(density(cplayers$gamesSum))
+plot(density(cplayers[ cplayers$gamesSum > 50,'redCardsSumProp']))
+plot(density(cplayers[ cplayers$gamesSum > 100,'redCardsSumProp']))
+plot(density(cplayers[ cplayers$gamesSum > 150,'redCardsSumProp']))
+plot(density(cplayers[ cplayers$gamesSum > 200,'redCardsSumProp']))
+# the distribution of redCards appears to be bimodal or possibly even trimodal
+# some never get red flags, another mode exists around 0.5%, and a final small hump seems to be between 1.5 and 2%.
+
+# one challenges is going to be the rare occurrence of red flags
+plot(redCardsSumProp~gamesSum, cplayers)
+# * the above plot shows lines indicating the effect of 1, 2,  or 3 flags over match counts
+# * I.e., what shrinkage should be used or how should this be incorporated into the model
+
+
+# League by red cards
+boxplot(redCardsSumProp ~ leagueCountry, cplayers)
+aggregate(redCardsSumProp ~ leagueCountry, cplayers, mean)
+summary(lm(redCardsSumProp ~ leagueCountry, cplayers))
+# * first impressions are that France gives out more red cards
+
+# position
+boxplot(redCardsSumProp ~ position, cplayers[cplayers$gamesSum > 100 , ])
+aggregate(redCardsSumProp ~ position, cplayers[cplayers$gamesSum > 100 , ], mean)
+summary(lm(redCardsSumProp ~ position, cplayers[cplayers$gamesSum > 100 , ]))
+# defence looks like it gets more red flags than other areas
+
+
+
+
+
+# year of birth/age
+with(cplayers[cplayers$gamesSum > 100 , ], scatter.smooth(birthday_year, redCardsSumProp))
+# * nothing much
+
+
+with(cplayers[cplayers$gamesSum > 100 , ], scatter.smooth(birthday_year, redCardsSumProp))
+
+with(cplayers[cplayers$gamesSum > 100 , ], scatter.smooth(yellowCardsSumProp, redCardsSumProp))
+
+# There is an association between prop yellow cards and prop red cards
+
+with(cplayers[cplayers$gamesSum > 50 , ], scatter.smooth(gamesSum, redCardsSumProp))
+# * slight hint that the proprtion might go up for people with more games
+
+with(cplayers[cplayers$gamesSum > 100 , ], scatter.smooth(height, redCardsSumProp))
+
+# club
+x <- aggregate(redCardsSumProp ~ club, cplayers[cplayers$gamesSum > 100 , ], mean)
+plot(density(x[,2]))
+# density of cards per club is fairly normal with a couple of little bumps like the player distributions
+summary(lm(redCardsSumProp ~ club, cplayers[cplayers$gamesSum > 100 , ]))
+
+
+# examination of skin colour
+plot(table(cplayers$skincol))
+round(prop.table(table(cplayers$position, cplayers$skincol),1), 2)
+# perhaps  strikers are more likely to have darker skin
+round(prop.table(table(cplayers$leagueCountry, cplayers$skincol),1), 2)
+# France has the most black players followed by England; Germany and S
+
+# quick examination of the country by skin colour interaction
+summary(lm(redCardsSumProp ~ I(skincol>3)*leagueCountry, cplayers[cplayers$gamesSum > 100, ]))
+summary(lm(redCardsSumProp ~ I(skincol>3)*leagueCountry, cplayers[cplayers$gamesSum > 50, ]))
+summary(lm(redCardsSumProp ~ I(skincol>3)*leagueCountry, cplayers))
+
+# games
+with(cplayers[cplayers$gamesSum > 20, ], scatter.smooth(log(gamesSum), redCardsSumProp))
+
+with(cplayers[cplayers$gamesSum > 20, ], scatter.smooth(goalsSumProp, redCardsSumProp))
+
+head(crefs)
+table(crefs$refNum)
+```
+
+
+### Ref database
+```{r}
+head(crefs)
+
+plot(density(log(crefs$gamesSum, 10)))
+plot(density(crefs[crefs$gamesSum > 100, "redCardsSumProp"]))
+plot(density(crefs[crefs$gamesSum > 200, "redCardsSumProp"]))
+plot(density(crefs[crefs$gamesSum > 300, "redCardsSumProp"]))
+plot(density(crefs[crefs$gamesSum > 400, "redCardsSumProp"]))
+table(crefs$redCardsSum)
+table(crefs[crefs$gamesSum > 200, "redCardsSum"])
+table(crefs[crefs$gamesSum > 100, "redCardsSum"])
+round(prop.table(table(crefs[crefs$gamesSum > 100, "redCardsSum"])), 3)
+
+# * I guess the density reflects the fact that a lot of referees never give out a red card in their career
+# * Including refs just with More games seems to move towards a more normal distribution
+
+
+
+```
+
+### Referee Country database
+```{r}
+# understanding of 
+table(ccountries$nIAT)
+plot(density(na.omit(ccountries$seIAT)))
+plot(sqrt(ccountries$nIAT), ccountries$seIAT)
+
+plot(density(na.omit(ccountries$meanIAT)))
+plot(density(na.omit(ccountries$meanExp)))
+plot(meanIAT ~ meanExp, ccountries)
+
+
+plot(density(log(ccountries$gamesSum, 10)))
+sum(ccountries$gamesSum >1000)
+plot(density(ccountries[ ccountries$gamesSum > 1000, 'redCardsSumProp']))
+```
+
+
+# Very basic exploration of models
+```{r}
+fit <- glm(cbind(redCards, games - redCards) ~ skincol, family=binomial, data=cdyads)
+summary(fit)
+
+logit2pi <-function (x)  exp(x) / (1 + exp(x))
+pred <- coef(fit)[1] + coef(fit)[2] * 1:5
+logit2pi(pred)
+
+head(cdyads)
+sum(cdyads$redCards) /   sum(cdyads$games)
+           
+fit
+
+
+```
+
+
+
+

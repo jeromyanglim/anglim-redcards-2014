@@ -1,0 +1,32 @@
+temp_cdyads <- cdyads[cdyads$games > 0, ]
+jags_data <- get_data1(dyad_data=temp_cdyads, x_var=c('skincol'), z_var="meanIAT", 
+                       w_var="skincolBYmeanIAT")
+
+Iterations = 2201:4200
+Thinning interval = 1 
+Number of chains = 4 
+Sample size per chain = 2000 
+
+1. Empirical mean and standard deviation for each variable,
+   plus standard error of the mean:
+
+               Mean      SD  Naive SE Time-series SE
+beta        -4.9314 0.07427 0.0008304       0.008257
+gamma_beta1 -0.0627 0.02638 0.0002949       0.002116
+gamma_beta2 -2.7747 0.34572 0.0038652       0.063045
+gamma_beta3  0.3968 0.58677 0.0065603       0.094793
+sigma_beta1  0.5772 0.04614 0.0005158       0.004518
+sigma_beta2  0.3723 0.05106 0.0005709       0.009108
+sigma_beta3  0.8884 0.05499 0.0006148       0.017265
+
+2. Quantiles for each variable:
+
+               2.5%      25%      50%     75%    97.5%
+beta        -4.9986 -4.98227 -4.95674 -4.9074 -4.70206
+gamma_beta1 -0.1153 -0.07993 -0.06307 -0.0451 -0.01079
+gamma_beta2 -3.5591 -2.98333 -2.72009 -2.5543 -2.19325
+gamma_beta3 -0.6429 -0.04504  0.39322  0.7990  1.57226
+sigma_beta1  0.4900  0.54649  0.57501  0.6083  0.66856
+sigma_beta2  0.2492  0.34608  0.37268  0.4028  0.47103
+sigma_beta3  0.7933  0.84907  0.89088  0.9185  1.01079
+
